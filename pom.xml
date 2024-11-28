@@ -14,8 +14,10 @@
 	<name>Chat-Application</name>
 	<description>Chat application using in WebSocket</description>
 	<properties>
-		<java.version>22</java.version> <!-- Updated to Java 22 -->
+		<maven.compiler.source>17</maven.compiler.source>
+		<maven.compiler.target>17</maven.compiler.target>
 	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

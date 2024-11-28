@@ -5,7 +5,7 @@ FROM openjdk:17-jdk-slim
 WORKDIR /app
 
 # Step 3: Copy the pre-built JAR file into the container
-COPY target/chat-application.jar /app/chat-application.jar
+COPY ./target/Chat-Application-0.0.1-SNAPSHOT.jar /app/chat-application.jar
 
 # Step 4: Expose the port your Spring Boot app runs on (default 8080)
 EXPOSE 8080
