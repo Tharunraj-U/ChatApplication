@@ -3,8 +3,8 @@ package com.Tharun.Chat_Application.controller;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Collections;
 import java.util.Set;
@@ -22,13 +22,13 @@ public class ChatController {
         this.messagingTemplate = messagingTemplate;
     }
 
-    @MessageMapping("/sendMessage") // Endpoint: app/sendMessage
-    @SendTo("/topic/messages") // Destination for subscribers
+    @MessageMapping("/sendMessage")
+    @SendTo("/topic/messages")
     public ChatMessage chatMessage(ChatMessage message) {
         return message;
     }
 
-    @MessageMapping("/addUser") // Endpoint: app/addUser
+    @MessageMapping("/addUser")
     public void addUser(UserAction userAction) {
         if (userAction.getType().equals("JOIN")) {
             activeUsers.add(userAction.getUsername());
@@ -36,6 +36,7 @@ public class ChatController {
             activeUsers.remove(userAction.getUsername());
         }
 
+        // Broadcast updated list of active users to all clients
         broadcastActiveUsers();
     }
 
