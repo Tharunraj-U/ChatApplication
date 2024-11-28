@@ -13,7 +13,7 @@ public class WebSocketConfig  implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/chat") //this end point is for creating the webSocket object in frontend eg:var socket =new SocketJs("http://localhost:8080/chat");
-                .setAllowedOrigins("http://localhost:63343/","http://localhost:63342/").withSockJS();
+                .setAllowedOrigins("https://chatapplication-lu48.onrender.com/").withSockJS();
 
     }
 

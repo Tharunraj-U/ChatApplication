@@ -1,0 +1,6 @@
+com\Tharun\Chat_Application\ChatApplication.class
+com\Tharun\Chat_Application\controller\ChatController.class
+com\Tharun\Chat_Application\controller\ChatMessage.class
+com\Tharun\Chat_Application\config\WebSocketConfig.class
+com\Tharun\Chat_Application\controller\UserAction.class
+com\Tharun\Chat_Application\controller\ActiveUsersResponse.class

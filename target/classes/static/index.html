@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Chat Application</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="styles.css" rel="stylesheet">
+</head>
+<body>
+<div class="chat-container">
+    <div class="sidebar">
+        <h3>Online Users</h3>
+        <div class="user-list" id="onlineUserList">
+            <div>No users online</div>
+        </div>
+    </div>
+    <div class="chat-main">
+        <div class="chat-header">Enhanced Chat Application</div>
+        <div id="chatMessages">
+            <div class="placeholder">No messages yet. Start chatting!</div>
+        </div>
+        <div class="input-section">
+            <div class="input-group">
+                <input type="text" id="username" placeholder="Your Name" required>
+            </div>
+            <div class="input-group">
+                <input type="text" id="message" placeholder="Type a message" required>
+            </div>
+            <button class="send-btn" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let socket;
+    let stompClient;
+    let currentUsername = '';
+
+    document.getElementById('username').addEventListener('change', function() {
+        const newUsername = this.value.trim();
+
+        // If username has changed and we're already connected, disconnect and reconnect
+        if (currentUsername && newUsername !== currentUsername) {
+            // Notify server about user leaving
+            if (stompClient && stompClient.connected) {
+                stompClient.send("/app/addUser", {}, JSON.stringify({
+                    username: currentUsername,
+                    type: 'LEAVE'
+                }));
+            }
+
+            // Reconnect with new username
+            connectWebSocket(newUsername);
+        } else if (!currentUsername && newUsername) {
+            // Initial connection
+            connectWebSocket(newUsername);
+        }
+    });
+
+    function connectWebSocket(username) {
+        // Disconnect existing connection if any
+        if (stompClient && stompClient.connected) {
+            stompClient.disconnect();
+        }
+
+        // Create new connection
+        socket = new SockJS('https://chatapplication-lu48.onrender.com/chat');
+        stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function (frame) {
+            console.log('Connected: ' + frame);
+            currentUsername = username;
+
+            // Subscribe to chat messages
+            stompClient.subscribe('/topic/messages', function (messageOutput) {
+                const message = JSON.parse(messageOutput.body);
+                displayMessage(message.sender, message.content);
+            });
+
+            // Subscribe to active users
+            stompClient.subscribe('/topic/users', function (userOutput) {
+                const usersData = JSON.parse(userOutput.body);
+                updateOnlineUsers(usersData.users);
+            });
+
+            // Notify server about new user
+            stompClient.send("/app/addUser", {}, JSON.stringify({
+                username: username,
+                type: 'JOIN'
+            }));
+        });
+    }
+
+    function sendMessage() {
+        const username = document.getElementById("username").value.trim();
+        const messageContent = document.getElementById("message").value.trim();
+
+        if (username && messageContent) {
+            stompClient.send("/app/sendMessage", {}, JSON.stringify({
+                id: Date.now().toString(),
+                sender: username,
+                content: messageContent
+            }));
+
+            document.getElementById("message").value = '';
+        } else {
+            alert("Please enter both your name and message.");
+        }
+    }
+
+    function displayMessage(sender, content) {
+        const chatMessagesDiv = document.getElementById("chatMessages");
+        const placeholder = chatMessagesDiv.querySelector('.placeholder');
+
+        if (placeholder) {
+            placeholder.remove();
+        }
+
+        const messageElement = document.createElement("div");
+        messageElement.classList.add('message');
+
+        const currentUser = document.getElementById("username").value.trim();
+        if (sender === currentUser) {
+            messageElement.classList.add('current-user');
+        }
+
+        messageElement.innerHTML = `<strong>${sender}:</strong> ${content}`;
+        chatMessagesDiv.appendChild(messageElement);
+        chatMessagesDiv.scrollTop = chatMessagesDiv.scrollHeight;
+    }
+
+    function updateOnlineUsers(users) {
+        const onlineUserList = document.getElementById("onlineUserList");
+        onlineUserList.innerHTML = ''; // Clear the list first
+
+        users.forEach(user => {
+            const userElement = document.createElement('div');
+            const currentUser = document.getElementById("username").value.trim();
+            userElement.textContent = user;
+
+            if (user === currentUser) {
+                userElement.classList.add('current-user');
+            }
+
+            onlineUserList.appendChild(userElement);
+        });
+
+        if (users.length === 0) {
+            onlineUserList.innerHTML = '<div>No users online</div>';
+        }
+    }
+
+    // Notify server on window close
+    window.addEventListener('beforeunload', function () {
+        if (currentUsername && stompClient && stompClient.connected) {
+            stompClient.send("/app/addUser", {}, JSON.stringify({
+                username: currentUsername,
+                type: 'LEAVE'
+            }));
+        }
+    });
+</script>
+</body>
+</html>
